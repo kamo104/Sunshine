@@ -18,6 +18,9 @@ namespace platf::wl_keyboard {
     zwp_virtual_keyboard_v1 *keyboard = nullptr;
     wl_seat *seat = nullptr;
 
+    uint32_t mods_depressed = 0;
+    uint32_t mods_locked = 0;
+
     bool init();
     void destroy();
   };

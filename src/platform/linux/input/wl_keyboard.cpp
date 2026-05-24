@@ -307,6 +307,55 @@ namespace platf::wl_keyboard {
     {0xE2, KEY_102ND},
   };
 
+  namespace {
+
+    // Standard xkb modifier indices for a "pc+us+inet(evdev)" keymap
+    constexpr uint32_t MOD_SHIFT   = 1u << 0;
+    constexpr uint32_t MOD_CONTROL = 1u << 2;
+    constexpr uint32_t MOD_ALT     = 1u << 3;
+    constexpr uint32_t MOD_SUPER   = 1u << 6;
+
+    uint32_t
+    evdev_to_modbit(uint16_t evdev) {
+      switch (evdev) {
+        case KEY_LEFTSHIFT:
+        case KEY_RIGHTSHIFT:
+          return MOD_SHIFT;
+        case KEY_LEFTCTRL:
+        case KEY_RIGHTCTRL:
+          return MOD_CONTROL;
+        case KEY_LEFTALT:
+        case KEY_RIGHTALT:
+          return MOD_ALT;
+        case KEY_LEFTMETA:
+        case KEY_RIGHTMETA:
+          return MOD_SUPER;
+        default:
+          return 0;
+      }
+    }
+
+    // Lock-key modifier bits
+    constexpr uint32_t MOD_CAPS   = 1u << 1;  // Lock (CapsLock)
+    constexpr uint32_t MOD_NUM    = 1u << 4;  // Mod2 (NumLock)
+    constexpr uint32_t MOD_SCROLL = 1u << 5;  // Mod3 (ScrollLock)
+
+    uint32_t
+    evdev_to_lockbit(uint16_t evdev) {
+      switch (evdev) {
+        case KEY_CAPSLOCK:
+          return MOD_CAPS;
+        case KEY_NUMLOCK:
+          return MOD_NUM;
+        case KEY_SCROLLLOCK:
+          return MOD_SCROLL;
+        default:
+          return 0;
+      }
+    }
+
+  }  // anonymous namespace (continued)
+
   void
   update(state_t *state, uint16_t modcode, bool release) {
     auto it = vk_to_evdev.find(modcode);
@@ -315,8 +364,31 @@ namespace platf::wl_keyboard {
       return;
     }
 
+    uint16_t evdev = it->second;
+    uint32_t modbit = evdev_to_modbit(evdev);
+    uint32_t lockbit = evdev_to_lockbit(evdev);
+    uint32_t prev_depressed = state->mods_depressed;
+    uint32_t prev_locked = state->mods_locked;
+
+    if (release) {
+      state->mods_depressed &= ~modbit;
+    }
+    else {
+      state->mods_depressed |= modbit;
+      if (lockbit) {
+        state->mods_locked ^= lockbit;
+      }
+    }
+
     uint32_t state_val = release ? WL_KEYBOARD_KEY_STATE_RELEASED : WL_KEYBOARD_KEY_STATE_PRESSED;
-    zwp_virtual_keyboard_v1_key(state->keyboard, now_ms(), it->second, state_val);
+    zwp_virtual_keyboard_v1_key(state->keyboard, now_ms(), evdev, state_val);
+
+    if ((modbit && state->mods_depressed != prev_depressed) ||
+        (lockbit && state->mods_locked != prev_locked)) {
+      zwp_virtual_keyboard_v1_modifiers(state->keyboard,
+        state->mods_depressed, 0, state->mods_locked, 0);
+    }
+
     wl_display_flush(state->display);
   }
 
