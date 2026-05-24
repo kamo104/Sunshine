@@ -73,3 +73,6 @@
 	path = third-party/wlr-protocols
 	url = https://github.com/LizardByte-infrastructure/wlr-protocols.git
 	branch = master
+[submodule "third-party/wlroots"]
+	path = third-party/wlroots
+	url = https://gitlab.freedesktop.org/wlroots/wlroots.git
