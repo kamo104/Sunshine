@@ -217,6 +217,7 @@ namespace config {
     bool native_pen_touch;
 
     bool wlr_virtual_mouse;  ///< Linux/Wayland only: use wlr-virtual-pointer protocol instead of uinput
+    bool wlr_virtual_keyboard;  ///< Linux/Wayland only: use virtual-keyboard protocol instead of uinput
   };
 
   namespace flag {

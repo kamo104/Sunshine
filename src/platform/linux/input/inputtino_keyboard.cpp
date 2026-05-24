@@ -14,6 +14,7 @@
 #include "src/logging.h"
 #include "src/platform/common.h"
 #include "src/utility.h"
+#include "wl_keyboard.h"
 
 using namespace std::literals;
 
@@ -161,6 +162,12 @@ namespace platf::keyboard {
   };
 
   void update(input_raw_t *raw, uint16_t modcode, bool release, uint8_t flags) {
+#ifdef SUNSHINE_BUILD_WAYLAND
+    if (config::input.wlr_virtual_keyboard && raw->wl_keyboard.keyboard) {
+      platf::wl_keyboard::update(&raw->wl_keyboard, modcode, release);
+      return;
+    }
+#endif
     if (raw->keyboard) {
       if (release) {
         (*raw->keyboard).release(modcode);

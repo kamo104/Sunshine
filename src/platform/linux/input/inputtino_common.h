@@ -15,6 +15,7 @@
 #include "src/platform/common.h"
 #include "src/platform/linux/input/inputtino_seat.h"
 #include "src/utility.h"
+#include "wl_keyboard.h"
 #include "wl_mouse.h"
 
 using namespace std::literals;
@@ -72,12 +73,19 @@ namespace platf {
                            << "check WAYLAND_DISPLAY and compositor support";
         }
       }
+      if (config::input.wlr_virtual_keyboard) {
+        if (!wl_keyboard.init()) {
+          BOOST_LOG(error) << "Failed to initialize wlr-virtual-keyboard; "
+                           << "check WAYLAND_DISPLAY and compositor support";
+        }
+      }
 #endif
     }
 
     ~input_raw_t() {
 #ifdef SUNSHINE_BUILD_WAYLAND
       wl_mouse.destroy();
+      wl_keyboard.destroy();
 #endif
     }
 
@@ -87,6 +95,7 @@ namespace platf {
 
 #ifdef SUNSHINE_BUILD_WAYLAND
     platf::wl_mouse::state_t wl_mouse;
+    platf::wl_keyboard::state_t wl_keyboard;
 #endif
 
     /**

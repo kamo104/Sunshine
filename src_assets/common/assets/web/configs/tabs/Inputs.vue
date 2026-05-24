@@ -190,6 +190,16 @@ const config = ref(props.config)
               v-model="config.wlr_virtual_mouse"
               default="false"
     ></Checkbox>
+
+    <!-- WLR Virtual Keyboard (Linux/Wayland only) -->
+    <Checkbox v-if="platform === 'linux'"
+              class="mb-3"
+              id="wlr_virtual_keyboard"
+              locale-prefix="config"
+              v-model="config.wlr_virtual_keyboard"
+              default="false"
+    ></Checkbox>
+    
   </div>
 </template>
 
