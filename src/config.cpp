@@ -582,7 +582,7 @@ namespace config {
     true,  // always send scancodes
     true,  // high resolution scrolling
     true,  // native pen/touch support
-    true,  // wlr_virtual_mouse (use uinput by default)
+    false,  // wlr_virtual_mouse (use uinput by default)
   };
 
   sunshine_t sunshine {
