@@ -45,6 +45,8 @@
 #include "src/utility.h"
 #include "wl_keyboard.h"
 
+using namespace std::literals;
+
 namespace platf::wl_keyboard {
 
   namespace {
@@ -380,11 +382,22 @@ namespace platf::wl_keyboard {
       }
     }
 
+    BOOST_LOG(info)
+      << "wl_keyboard: "sv << (release ? "UP"sv : "DOWN"sv)
+      << " vk=0x"sv << util::hex((std::uint8_t) modcode).to_string_view()
+      << " evdev=0x"sv << util::hex((std::uint16_t) evdev).to_string_view()
+      << " modbit=0x"sv << util::hex(modbit).to_string_view()
+      << " depressed=0x"sv << util::hex(state->mods_depressed).to_string_view()
+      << " locked=0x"sv << util::hex(state->mods_locked).to_string_view();
+
     uint32_t state_val = release ? WL_KEYBOARD_KEY_STATE_RELEASED : WL_KEYBOARD_KEY_STATE_PRESSED;
     zwp_virtual_keyboard_v1_key(state->keyboard, now_ms(), evdev, state_val);
 
     if ((modbit && state->mods_depressed != prev_depressed) ||
         (lockbit && state->mods_locked != prev_locked)) {
+      BOOST_LOG(info)
+        << "wl_keyboard: modifiers depressed=0x"sv << util::hex(state->mods_depressed).to_string_view()
+        << " locked=0x"sv << util::hex(state->mods_locked).to_string_view();
       zwp_virtual_keyboard_v1_modifiers(state->keyboard,
         state->mods_depressed, 0, state->mods_locked, 0);
     }

@@ -711,6 +711,10 @@ namespace input {
   }
 
   void send_key_and_modifiers(uint16_t key_code, bool release, uint8_t flags, uint8_t synthetic_modifiers) {
+    BOOST_LOG(info)
+      << "keyboard: TX "sv << (release ? "UP"sv : "DOWN"sv)
+      << " vk=0x"sv << util::hex((std::uint8_t) key_code).to_string_view()
+      << " synthetic=0x"sv << util::hex(synthetic_modifiers).to_string_view();
     if (!release) {
       // Press any synthetic modifiers required for this key
       if (synthetic_modifiers & MODIFIER_SHIFT) {
@@ -754,11 +758,19 @@ namespace input {
 
   void passthrough(std::shared_ptr<input_t> &input, PNV_KEYBOARD_PACKET packet) {
     if (!config::input.keyboard) {
+      BOOST_LOG(info) << "keyboard: input disabled, dropping key"sv;
       return;
     }
 
     auto release = util::endian::little(packet->header.magic) == KEY_UP_EVENT_MAGIC;
     auto keyCode = packet->keyCode & 0x00FF;
+
+    BOOST_LOG(info)
+      << "keyboard: RX "sv << (release ? "UP"sv : "DOWN"sv)
+      << " keyCode=0x"sv << util::hex((std::uint8_t) keyCode).to_string_view()
+      << " modifiers=0x"sv << util::hex((std::uint8_t) packet->modifiers).to_string_view()
+      << " flags=0x"sv << util::hex((std::uint8_t) packet->flags).to_string_view()
+      << " shortcutFlags=0x"sv << util::hex((std::uint8_t) input->shortcutFlags).to_string_view();
 
     // Set synthetic modifier flags if the keyboard packet is requesting modifier
     // keys that are not current pressed.
@@ -775,12 +787,19 @@ namespace input {
       }
     }
 
+    if (packet->modifiers & MODIFIER_META) {
+      BOOST_LOG(info)
+        << "keyboard: packet carries MODIFIER_META, synth=0x"sv
+        << util::hex(synthetic_modifiers).to_string_view();
+    }
+
     auto &pressed = key_press[make_kpid(keyCode, packet->flags)];
     if (!pressed) {
       if (!release) {
         // A new key has been pressed down, we need to check for key combo's
         // If a key-combo has been pressed down, don't pass it through
         if (input->shortcutFlags == input_t::SHORTCUT && apply_shortcut(keyCode) > 0) {
+          BOOST_LOG(info) << "keyboard: consumed by shortcut combo"sv;
           return;
         }
 
@@ -793,10 +812,12 @@ namespace input {
         }
       } else {
         // Already released
+        BOOST_LOG(info) << "keyboard: RX UP without prior DOWN, dropping"sv;
         return;
       }
     } else if (!release) {
       // Already pressed down key
+      BOOST_LOG(info) << "keyboard: RX DOWN while already down, dropping"sv;
       return;
     }
 

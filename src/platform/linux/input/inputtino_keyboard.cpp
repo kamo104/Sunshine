@@ -164,11 +164,19 @@ namespace platf::keyboard {
   void update(input_raw_t *raw, uint16_t modcode, bool release, uint8_t flags) {
 #ifdef SUNSHINE_BUILD_WAYLAND
     if (config::input.wlr_virtual_keyboard && raw->wl_keyboard.keyboard) {
+      BOOST_LOG(info)
+        << "keyboard: dispatch to wlr virtual keyboard, modcode=0x"sv
+        << util::hex((std::uint8_t) modcode).to_string_view()
+        << " "sv << (release ? "UP"sv : "DOWN"sv);
       platf::wl_keyboard::update(&raw->wl_keyboard, modcode, release);
       return;
     }
 #endif
     if (raw->keyboard) {
+      BOOST_LOG(info)
+        << "keyboard: dispatch to inputtino, modcode=0x"sv
+        << util::hex((std::uint8_t) modcode).to_string_view()
+        << " "sv << (release ? "UP"sv : "DOWN"sv);
       if (release) {
         (*raw->keyboard).release(modcode);
       } else {
